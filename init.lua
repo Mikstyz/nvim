@@ -367,6 +367,10 @@ keymap("n", "<C-S-Left>", "vB", opts)
 keymap("n", "<C-S-Right>", "vE", opts)
 
 
+-- Ожидание нажатия Ctrl+A для выделения всего файла в режиме выделения
+vim.api.nvim_set_keymap('v', '<C-a>', ':normal! ggVG<CR>', { noremap = true, silent = true })
+
+
 
 -- Автозакрытие в режиме вставки
 local function map(mode, lhs, rhs, opts)
