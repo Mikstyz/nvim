@@ -168,15 +168,6 @@ vim.cmd([[
 ----------------------Системные команды-------------------------
 ----------------------------------------------------------------
 
--- ОТКРЫТЬ ДИРЕКТОРИЮ В проводнике
-vim.api.nvim_create_user_command('OpenDE', function()
-    local dir = vim.fn.expand('%:p:h')
-    local os_name = vim.loop.os_uname().sysname
-    if os_name == "Windows_NT" then os.execute('explorer ' .. dir)
-    elseif os_name == "Darwin" then os.execute('open ' .. dir)
-    else os.execute('xdg-open ' .. dir) end
-end, {})
-
 -- ОТКРЫТЬ ДИРЕКТОРИЮ В ТЕРМИНАЛЕ
 vim.api.nvim_create_user_command('OpenDirT', function()
     local dir = vim.fn.expand('%:p:h') -- Получаем путь к директории текущего файла
@@ -190,12 +181,51 @@ vim.api.nvim_create_user_command('OpenDirT', function()
     end
 end, {})
 
---Копирование пути файла в буфер обмена
+--Копирование пути фаЖйла в буфер обмена
 vim.api.nvim_create_user_command('CopPat', function()
     local path = vim.fn.expand('%:p')
     vim.fn.setreg('+', path)
     print("Путь скопирован: " .. path)
 end, {})
+
+----------------------------------------------------------------
+------------------------Открыть-в-------------------------------
+----------------------------------------------------------------
+
+-- ОТКРЫТЬ ДИРЕКТОРИЮ В проводнике
+vim.api.nvim_create_user_command('OpenDE', function()
+    local dir = vim.fn.expand('%:p:h')
+    local os_name = vim.loop.os_uname().sysname
+    if os_name == "Windows_NT" then os.execute('explorer ' .. dir)
+    elseif os_name == "Darwin" then os.execute('open ' .. dir)
+    else os.execute('xdg-open ' .. dir) end
+end, {})
+
+-- Открыть текущий файл в VsCode
+vim.api.nvim_create_user_command("VsCode", function()
+  local file = vim.fn.expand("%:p")
+  vim.fn.jobstart({"code", file}, {detach = true})
+end, {})
+
+-- Открыть текущий файл в Vs
+vim.api.nvim_create_user_command("Vstudio", function()
+  local file = vim.fn.expand("%:p")
+  vim.fn.jobstart({"cmd.exe", "/C", "start", "devenv", file}, {detach = true})
+end, {})
+
+-- Открыть текущий файл в Note
+vim.api.nvim_create_user_command("Note", function()
+  local file = vim.fn.expand("%:p")
+  vim.fn.jobstart({"cmd.exe", "/C", "start", "notepad", file}, {detach = true})
+end, {})
+
+-- Открыть текущий файл в NotePad++
+vim.api.nvim_create_user_command("NotePP", function()
+  local file = vim.fn.expand("%:p")
+  vim.fn.jobstart({"cmd.exe", "/C", "start", "notepad++", file}, {detach = true})
+end, {})
+
+
 
 
 
@@ -405,28 +435,71 @@ _G.smart_cr = function()
   return "\r"
 end
 
+----------------------------------------------------------------
+----------------------Команды Для конфига-----------------------
+----------------------------------------------------------------
+
+
+-- Открыть конфиг файл cfg
+vim.api.nvim_create_user_command("Cfg", function()
+  vim.cmd("edit $MYVIMRC")
+end, {})
+
+-- Быстро все скачать MksInstall
+vim.api.nvim_create_user_command("MksInstall", function()
+  vim.cmd("Pasker install")
+  vim.cmd("MasonInstall --force omnisharp gopls jdtls pyright json-lsp sqlls")
+end, {})
+
+
+-- Быстро все обновить MksUpdate
+vim.api.nvim_create_user_command("MksUpdate", function()
+  vim.cmd("Pasker update")
+  vim.cmd("MasonUpdate")
+end, {})
+
+
 
 
 ----------------------------------------------------------------
 ----------------------Команды Docker----------------------------
 ----------------------------------------------------------------
 
+-- Проверка наличия файла docker-compose.yml перед выполнением команды
+local function has_docker_compose()
+  local cwd = vim.fn.expand('%:p:h')
+  local file = cwd .. '/docker-compose.yml'
+  return vim.fn.filereadable(file) == 1
+end
+
 -- Docker - run сборка и запуск
 vim.api.nvim_create_user_command('DockerRun', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose up --build')
+  if has_docker_compose() then
+    local cwd = vim.fn.expand('%:p:h')
+    vim.cmd('!cd ' .. cwd .. ' && docker-compose up --build')
+  else
+    print('Ошибка: docker-compose.yml не найден')
+  end
 end, {})
 
 -- Docker - build сборка
 vim.api.nvim_create_user_command('DockerBuild', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose build')
+  if has_docker_compose() then
+    local cwd = vim.fn.expand('%:p:h')
+    vim.cmd('!cd ' .. cwd .. ' && docker-compose build')
+  else
+    print('Ошибка: docker-compose.yml не найден')
+  end
 end, {})
 
 -- Docker - stop остановка
 vim.api.nvim_create_user_command('DockerStop', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose down')
+  if has_docker_compose() then
+    local cwd = vim.fn.expand('%:p:h')
+    vim.cmd('!cd ' .. cwd .. ' && docker-compose down')
+  else
+    print('Ошибка: docker-compose.yml не найден')
+  end
 end, {})
 
 -- Docker - clear очистка
@@ -437,16 +510,24 @@ end, {})
 
 -- Docker - clear run очистка и запуск
 vim.api.nvim_create_user_command('DockerClearRun', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker system prune -f && docker-compose up --build')
+  if has_docker_compose() then
+    local cwd = vim.fn.expand('%:p:h')
+    vim.cmd('!cd ' .. cwd .. ' && docker system prune -f && docker-compose up --build')
+  else
+    print('Ошибка: docker-compose.yml не найден')
+  end
 end, {})
 
--- Docker name -run запуск проекта с именем
+-- Docker name - run запуск проекта с именем
 vim.api.nvim_create_user_command('DockerNameRun', function(opts)
   local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose -f docker-compose.' .. opts.args .. '.yml up --build')
+  local file = cwd .. '/docker-compose.' .. opts.args .. '.yml'
+  if vim.fn.filereadable(file) == 1 then
+    vim.cmd('!cd ' .. cwd .. ' && docker-compose -f ' .. file .. ' up --build')
+  else
+    print('Ошибка: ' .. file .. ' не найден')
+  end
 end, {nargs = 1})
-
 
 
 ----------------------------------------------------------------
@@ -629,8 +710,46 @@ end, {nargs = 0})
 
 
 
+----------------------------------------------------------------
+------------------------Работа-с-Git----------------------------
+----------------------------------------------------------------
 
+-- Показывает статус репозитория  
+vim.api.nvim_create_user_command("GitStatus", "!git status", {})
 
+-- Добавляет текущий файл в индекс  
+vim.api.nvim_create_user_command("GitAdd", "!git add %", {})
+
+-- Выполняет коммит (не забудь написать сообщение коммита)  
+vim.api.nvim_create_user_command("GitCommit", function(opts)
+    local message = opts.args
+    if message == "" then
+        print("❌ Ошибка: напиши сообщение для коммита!")
+        return
+    end
+    vim.cmd("!git add . && git commit -m '" .. message .. "'")
+end, { nargs = 1 })
+
+-- Отправляет изменения в удаленный репозиторий  
+vim.api.nvim_create_user_command("GitPush", "!git push", {})
+
+-- Забирает изменения из удаленного репозитория  
+vim.api.nvim_create_user_command("GitPull", "!git pull", {})
+
+-- Показывает разницу между файлами  
+vim.api.nvim_create_user_command("GitDiff", "!git diff", {})
+
+-- Показывает лог коммитов в удобном виде  
+vim.api.nvim_create_user_command("GitLog", "!git log --oneline --graph", {})
+
+-- Показывает, кто и когда изменял строки в файле  
+vim.api.nvim_create_user_command("GitBlame", "!git blame %", {})
+
+-- Откатывает изменения в текущем файле  
+vim.api.nvim_create_user_command("GitReset", "!git reset HEAD %", {})
+
+-- Откатывает последний коммит  
+vim.api.nvim_create_user_command("GitRevert", "!git revert HEAD", {})
 
 
 
@@ -681,10 +800,14 @@ ensure_packer()
 -- Устанавливаем нужные плагины
 require("packer").startup(function(use)
     use "wbthomason/packer.nvim"           -- Менеджер плагинов
+    
+
     -- LSP
     use "neovim/nvim-lspconfig"            -- Конфиг LSP
     use "williamboman/mason.nvim"          -- Автоматическая установка LSP серверов
     use "williamboman/mason-lspconfig.nvim" -- Связка mason + lspconfig
+    
+
     -- Автодополнение
     use "hrsh7th/nvim-cmp"                 -- Основной плагин автодополнения
     use "hrsh7th/cmp-nvim-lsp"             -- Источник для LSP
@@ -692,12 +815,31 @@ require("packer").startup(function(use)
     use "hrsh7th/cmp-path"                 -- Источник: пути файловой системы
     use "L3MON4D3/LuaSnip"                 -- Сниппеты
     use "saadparwaiz1/cmp_luasnip"         -- Интеграция luasnip с nvim-cmp
+    
+
     -- Explorer
     use "DaikyXendo/nvim-material-icon"    -- Иконки для файлов
     use {
         "nvim-tree/nvim-tree.lua",
         requires = { "nvim-tree/nvim-web-devicons" } -- Иконки для nvim-tree
     }
+
+
+    --Быстрое коментирование
+    use {
+
+        'numToStr/Comment.nvim',
+        config = function()
+            require('Comment').setup()
+        end
+    }
+
+    --Поиск по файлам
+    use { 'junegunn/fzf', run = function() vim.fn['fzf#install']() end }
+    use 'junegunn/fzf.vim'
+
+
+
     -- Цветовая схема
     use "Mofiqul/dracula.nvim"
 end)
@@ -938,3 +1080,32 @@ vim.cmd [[
     filetype plugin indent on
 ]]
 vim.cmd[[colorscheme dracula]]
+
+
+
+----------------------------------------------------------------
+-----------------------------Lsp-Команды------------------------
+----------------------------------------------------------------
+
+-- Форматирование кода
+vim.api.nvim_create_user_command("Format", function()
+  vim.lsp.buf.format({async = true})
+end, {})
+
+-- Перезапуск LSP
+vim.api.nvim_create_user_command("RestartLSP", function()
+  vim.cmd("LspRestart")
+end, {})
+
+
+
+
+
+-- Удаление временных файлов
+vim.api.nvim_create_user_command("Clean", function()
+  vim.fn.jobstart({"cmd.exe", "/C", "del /S /Q *.tmp *.log *.bak *.swp"}, {detach = true})
+end, {})
+
+-- Comment.nvim для горячей клавиши комментариев (gcc)
+require('Comment').setup()
+
