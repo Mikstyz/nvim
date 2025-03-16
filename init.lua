@@ -650,21 +650,15 @@ vim.api.nvim_create_user_command('ExUp', function()
   vim.cmd('e ' .. parent_dir) -- Открываем родительскую директорию через ex
 end, {})
 
-
 ----------------------------------------------------------------
 ----------------------Команды lua-------------------------------
 ----------------------------------------------------------------
 
--- перезагрузка LuaConf
+-- Перезагрузка LuaConf
 vim.api.nvim_create_user_command("LuaBoot", function()
     vim.cmd("source $MYVIMRC")
     print("Lua config reloaded!")
 end, {})
-
-
-
-
-
 
 ----------------------------------------------------------------
 -------------------Установка и настройка плагинов---------------
@@ -672,200 +666,275 @@ end, {})
 
 -- Установка packer.nvim (если ещё нет)
 local ensure_packer = function()
-  local fn = vim.fn
-  local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
-  if fn.empty(fn.glob(install_path)) > 0 then
-    fn.system({
-      "git", "clone", "--depth", "1",
-      "https://github.com/wbthomason/packer.nvim", install_path
-    })
-    vim.cmd("packadd packer.nvim")
-  end
+    local fn = vim.fn
+    local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
+    if fn.empty(fn.glob(install_path)) > 0 then
+        fn.system({
+            "git", "clone", "--depth", "1",
+            "https://github.com/wbthomason/packer.nvim", install_path
+        })
+        vim.cmd("packadd packer.nvim")
+    end
 end
-
 ensure_packer()
-
 
 -- Устанавливаем нужные плагины
 require("packer").startup(function(use)
-  use "wbthomason/packer.nvim" -- Менеджер плагинов
-
-  -- LSP
-  use "neovim/nvim-lspconfig" -- Конфиг LSP
-  use "williamboman/mason.nvim" -- Автоматическая установка LSP серверов
-  use "williamboman/mason-lspconfig.nvim" -- Связка mason + lspconfig
-  
-  
-  use 'DaikyXendo/nvim-material-icon'
-  
-  
-  -- Explorer
-  use {
-    'nvim-tree/nvim-tree.lua',
-    requires = {
-      'nvim-tree/nvim-web-devicons', -- optional, for file icons
-    },
-  }
-  
-  
-
-  -- Автодополнение
-  use "hrsh7th/nvim-cmp" -- Основной плагин автодополнения
-  use "hrsh7th/cmp-nvim-lsp" -- Источник для LSP
-  use "Mofiqul/dracula.nvim"
+    use "wbthomason/packer.nvim"           -- Менеджер плагинов
+    -- LSP
+    use "neovim/nvim-lspconfig"            -- Конфиг LSP
+    use "williamboman/mason.nvim"          -- Автоматическая установка LSP серверов
+    use "williamboman/mason-lspconfig.nvim" -- Связка mason + lspconfig
+    -- Автодополнение
+    use "hrsh7th/nvim-cmp"                 -- Основной плагин автодополнения
+    use "hrsh7th/cmp-nvim-lsp"             -- Источник для LSP
+    use "hrsh7th/cmp-buffer"               -- Источник: слова из буфера
+    use "hrsh7th/cmp-path"                 -- Источник: пути файловой системы
+    use "L3MON4D3/LuaSnip"                 -- Сниппеты
+    use "saadparwaiz1/cmp_luasnip"         -- Интеграция luasnip с nvim-cmp
+    -- Explorer
+    use "DaikyXendo/nvim-material-icon"    -- Иконки для файлов
+    use {
+        "nvim-tree/nvim-tree.lua",
+        requires = { "nvim-tree/nvim-web-devicons" } -- Иконки для nvim-tree
+    }
+    -- Цветовая схема
+    use "Mofiqul/dracula.nvim"
 end)
-
-
-
-
 
 ----------------------------------------------------------------
 ------------------------Настройка nvim-tree---------------------
 ----------------------------------------------------------------
 
--- Настройка nvim-tree
-require('nvim-tree').setup({
-  on_attach = function(bufnr)
-    local api = require("nvim-tree.api")
+require("nvim-tree").setup({
+    on_attach = function(bufnr)
+        local api = require("nvim-tree.api")
 
-    -- Функция для переключения на директорию текущего файла
-    local function toggle_file_directory()
-      local current_file = vim.fn.expand("%:p")
-      if current_file == "" then
-        print("No file is currently open")
-        return
-      end
-
-      local current_dir = vim.fn.fnamemodify(current_file, ":h")
-      if api.tree.is_visible() then
-        api.tree.change_root(current_dir)
-      else
-        api.tree.open({ path = current_dir })
-        vim.cmd('vertical resize ' .. math.floor(vim.o.columns * 0.95))
-      end
-    end
-
-    -- Привязка к <S-e>
-    vim.keymap.set('n', '<S-e>', toggle_file_directory, { silent = true, noremap = true, desc = 'Toggle Nvim-Tree for current directory' })
-
-    -- Функция для синхронизации корня с текущим файлом
-    local function sync_root_with_current_file()
-      local current_file = vim.fn.expand("%:p")
-      if current_file ~= "" and api.tree.is_visible() then
-        local current_dir = vim.fn.fnamemodify(current_file, ":h")
-        local current_root = api.tree.get_nodes().absolute_path
-        if current_dir ~= current_root then
-          api.tree.change_root(current_dir)
+        -- Функция для переключения на директорию текущего файла
+        local function toggle_file_directory()
+            local current_file = vim.fn.expand("%:p")
+            if current_file == "" then
+                print("No file is currently open")
+                return
+            end
+            local current_dir = vim.fn.fnamemodify(current_file, ":h")
+            if api.tree.is_visible() then
+                api.tree.change_root(current_dir)
+            else
+                api.tree.open({ path = current_dir })
+                vim.cmd("vertical resize " .. math.floor(vim.o.columns * 0.95))
+            end
         end
-      end
-    end
 
-    -- Автоматическая синхронизация при открытии файла
-    vim.api.nvim_create_autocmd("BufEnter", {
-      group = vim.api.nvim_create_augroup("NvimTreeAutoRoot", { clear = true }),
-      callback = function()
-        vim.schedule(sync_root_with_current_file) -- Используем vim.schedule для асинхронности
-      end,
-    })
+        -- Привязка к <S-e>
+        vim.keymap.set("n", "<S-e>", toggle_file_directory, { silent = true, noremap = true, desc = "Toggle Nvim-Tree for current directory" })
 
-    -- Функция для перехода к выбранной директории или открытия файла
-    local function set_root_to_node()
-      local node = api.tree.get_node_under_cursor()
-      if not node then return end
-      if node.type == "directory" then
-        api.tree.change_root(node.absolute_path)
-      elseif node.type == "file" then
-        api.node.open.edit(node)
-      end
-    end
+        -- Функция для синхронизации корня с текущим файлом
+        local function sync_root_with_current_file()
+            local current_file = vim.fn.expand("%:p")
+            if current_file ~= "" and api.tree.is_visible() then
+                local current_dir = vim.fn.fnamemodify(current_file, ":h")
+                local current_root = api.tree.get_nodes().absolute_path
+                if current_dir ~= current_root then
+                    api.tree.change_root(current_dir)
+                end
+            end
+        end
 
-    -- Функция для перехода на уровень выше
-    local function go_to_parent()
-      api.tree.change_root_to_parent()
-      -- После перехода синхронизируем, если открыт файл
-      vim.schedule(sync_root_with_current_file)
-    end
+        -- Автоматическая синхронизация при открытии файла
+        vim.api.nvim_create_autocmd("BufEnter", {
+            group = vim.api.nvim_create_augroup("NvimTreeAutoRoot", { clear = true }),
+            callback = function()
+                vim.schedule(sync_root_with_current_file)
+            end,
+        })
 
-    local function opts(desc)
-      return { desc = "nvim-tree: " .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
-    end
+        -- Функция для перехода к выбранной директории или открытия файла
+        local function set_root_to_node()
+            local node = api.tree.get_node_under_cursor()
+            if not node then return end
+            if node.type == "directory" then
+                api.tree.change_root(node.absolute_path)
+            elseif node.type == "file" then
+                api.node.open.edit(node)
+            end
+        end
 
-    -- Используем стандартные привязки nvim-tree
-    api.config.mappings.default_on_attach(bufnr)
+        -- Функция для перехода на уровень выше
+        local function go_to_parent()
+            api.tree.change_root_to_parent()
+            vim.schedule(sync_root_with_current_file)
+        end
 
-    -- Кастомные привязки
-    vim.keymap.set("n", "<CR>", set_root_to_node, opts("Set root to selected node"))
-    vim.keymap.set("n", "-", go_to_parent, opts("Go to parent directory"))
-  end,
+        local function opts(desc)
+            return { desc = "nvim-tree: " .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+        end
 
-  view = {
-    width = 30,
-    side = "left",
-  },
+        -- Используем стандартные привязки nvim-tree
+        api.config.mappings.default_on_attach(bufnr)
 
-  filters = {
-    dotfiles = false,  -- Не показывать скрытые файлы
-  },
+        -- Кастомные привязки
+        vim.keymap.set("n", "<CR>", set_root_to_node, opts("Set root to selected node"))
+        vim.keymap.set("n", "-", go_to_parent, opts("Go to parent directory"))
+    end,
 
-  renderer = {
-    root_folder_label = false, -- Не показывать путь корневой папки
-    icons = {
-      show = {
-        file = true,
-        folder = true,
-        folder_arrow = false,
-      },
-      glyphs = {
-        default = '',
-        folder = {
-          default = '▶',
-          open = '▼',
-          empty = '▷',
-          empty_open = '▽',
-        },
-      },
+    view = {
+        width = 30,
+        side = "left",
     },
-    highlight_git = true,
-  },
+
+    filters = {
+        dotfiles = false,
+    },
+
+    renderer = {
+        root_folder_label = false,
+        icons = {
+            show = {
+                file = true,
+                folder = true,
+                folder_arrow = false,
+            },
+            glyphs = {
+                default = "",
+                folder = {
+                    default = "▶",
+                    open = "▼",
+                    empty = "▷",
+                    empty_open = "▽",
+                },
+            },
+        },
+        highlight_git = true,
+    },
 })
-
-
-
--- Загружаем плагины
-require("mason").setup()
-require("mason-lspconfig").setup()
-
-
 
 ----------------------------------------------------------------
 -------------Настройка LSP и автодополнения---------------------
 ----------------------------------------------------------------
 
--- Настроим LSP
-local lspconfig = require("lspconfig")
-
-lspconfig.jdtls.setup{}   -- Java
-lspconfig.omnisharp.setup{} -- C#
-lspconfig.pyright.setup{} -- Python
-lspconfig.jsonls.setup{} -- JSON
-lspconfig.sqlls.setup{}  -- SQL
-
--- Настраиваем nvim-cmp
-local cmp = require("cmp")
-
-cmp.setup({
-  mapping = {
-    ["<C-Space>"] = cmp.mapping.complete(),
-    ["<CR>"] = cmp.mapping.confirm({ select = true })
-  },
-  sources = {
-    { name = "nvim_lsp" }
-  }
+-- Настройка Mason для автоматической установки LSP-серверов
+require("mason").setup()
+require("mason-lspconfig").setup({
+    ensure_installed = {
+        "omnisharp",  -- C#
+        "gopls",      -- Go
+        "jdtls",      -- Java
+        "pyright",    -- Python
+        "jsonls",     -- JSON
+        "sqlls",      -- SQL
+    },
+    automatic_installation = true,
 })
 
-vim.cmd [[
-  syntax enable
-  filetype plugin indent on
-]]
+-- Загрузка lspconfig
+local lspconfig = require("lspconfig")
+local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
+-- Настройка LSP для каждого языка
+lspconfig.omnisharp.setup { -- C#
+    cmd = { "omnisharp" },
+    capabilities = capabilities,
+}
+
+lspconfig.gopls.setup { -- Go
+    cmd = { "gopls" },
+    capabilities = capabilities,
+    settings = {
+        gopls = {
+            analyses = { unusedparams = true },
+            staticcheck = true,
+        },
+    },
+}
+
+lspconfig.jdtls.setup { -- Java
+    cmd = { "jdtls" },
+    capabilities = capabilities,
+}
+
+lspconfig.pyright.setup { -- Python
+    cmd = { "pyright-langserver", "--stdio" },
+    capabilities = capabilities,
+}
+
+lspconfig.jsonls.setup { -- JSON
+    cmd = { "vscode-json-language-server", "--stdio" },
+    capabilities = capabilities,
+}
+
+lspconfig.sqlls.setup { -- SQL
+    cmd = { "sql-language-server", "up", "--method", "stdio" },
+    capabilities = capabilities,
+}
+
+-- Настройка nvim-cmp
+local cmp = require("cmp")
+local luasnip_ok, luasnip = pcall(require, "luasnip") -- Безопасная загрузка luasnip
+
+if luasnip_ok then
+    cmp.setup({
+        snippet = {
+            expand = function(args)
+                luasnip.lsp_expand(args.body)
+            end,
+        },
+        mapping = {
+            ["<C-Space>"] = cmp.mapping.complete(),
+            ["<CR>"] = cmp.mapping.confirm({ select = true }),
+            ["<Tab>"] = cmp.mapping(function(fallback)
+                if cmp.visible() then
+                    cmp.select_next_item()
+                elseif luasnip.expand_or_jumpable() then
+                    luasnip.expand_or_jump()
+                else
+                    fallback()
+                end
+            end, { "i", "s" }),
+            ["<S-Tab>"] = cmp.mapping(function(fallback)
+                if cmp.visible() then
+                    cmp.select_prev_item()
+                elseif luasnip.jumpable(-1) then
+                    luasnip.jump(-1)
+                else
+                    fallback()
+                end
+            end, { "i", "s" }),
+            ["<C-e>"] = cmp.mapping.close(),
+        },
+        sources = {
+            { name = "nvim_lsp", priority = 1000 },
+            { name = "luasnip", priority = 750 },
+            { name = "buffer", priority = 500 },
+            { name = "path", priority = 250 },
+        },
+    })
+else
+    cmp.setup({
+        mapping = {
+            ["<C-Space>"] = cmp.mapping.complete(),
+            ["<CR>"] = cmp.mapping.confirm({ select = true }),
+            ["<Tab>"] = cmp.mapping.select_next_item(),
+            ["<S-Tab>"] = cmp.mapping.select_prev_item(),
+            ["<C-e>"] = cmp.mapping.close(),
+        },
+        sources = {
+            { name = "nvim_lsp", priority = 1000 },
+            { name = "buffer", priority = 500 },
+            { name = "path", priority = 250 },
+        },
+    })
+    print("LuaSnip не установлен. Установите его через :PackerInstall L3MON4D3/LuaSnip")
+end
+
+-- Дополнительные возможности LSP
+vim.api.nvim_set_keymap("n", "<leader>f", "<cmd>lua vim.lsp.buf.format()<CR>", { noremap = true, silent = true }) -- Форматирование кода
+vim.diagnostic.config({ virtual_text = true }) -- Показывать ошибки в коде
+vim.api.nvim_set_keymap("n", "<leader>e", "<cmd>lua vim.diagnostic.open_float()<CR>", { noremap = true, silent = true }) -- Показать детали ошибки
+
+-- Финальные настройки
+vim.cmd [[
+    syntax enable
+    filetype plugin indent on
+]]
 vim.cmd[[colorscheme dracula]]
