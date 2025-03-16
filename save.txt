@@ -1,21 +1,12 @@
-----------------------------------------------------------------
-------------------Установка кодировки UTF-8---------------------
-----------------------------------------------------------------
+-- Установка кодировки UTF-8
 vim.opt.fileencodings = "utf-8,latin1" -- vim.opt.encoding устарело, Neovim всегда использует UTF-8
 
-
-
-----------------------------------------------------------------
-------------Установка английского языка для интерфейса----------
-----------------------------------------------------------------
+-- Установка английского языка для интерфейса
 vim.cmd [[ language messages en_US.UTF-8 ]] -- Язык сообщений и ошибок
 vim.o.helplang = "en" -- Язык для помощи (:help)
 vim.o.langmenu = "en_US.UTF-8" -- Язык для меню (на всякий случай)
 
-
-----------------------------------------------------------------
------------------------Основные настройки-----------------------
-----------------------------------------------------------------
+-- Основные настройки
 vim.opt.syntax = "on"
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4
@@ -30,8 +21,18 @@ vim.opt.undofile = true
 vim.opt.updatetime = 300
 vim.opt.backspace = { "indent", "eol", "start" }
 
+-- ShaDa с проверкой директории
+local shada_dir = vim.fn.stdpath("data") .. "/shada"
+if vim.fn.isdirectory(shada_dir) == 0 then
+  vim.fn.mkdir(shada_dir, "p")
+end
+vim.opt.shadafile = shada_dir .. "/main.shada"
+
+
+-- Включаем подсветку синтаксиса
 vim.cmd("syntax on")
 
+-- Использовать пробелы вместо табов и задать ширину таба
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
@@ -48,18 +49,9 @@ vim.opt.shadafile = "shada/main.shada"
 vim.opt.backspace = { "indent", "eol", "start" }
 
 
-----------------------------------------------------------------
----------------------Настройка ShaDa---------------------------
-----------------------------------------------------------------
-local shada_dir = vim.fn.stdpath("data") .. "/shada"
-if vim.fn.isdirectory(shada_dir) == 0 then
-  vim.fn.mkdir(shada_dir, "p")
-end
-vim.opt.shadafile = shada_dir .. "/main.shada"
 
-----------------------------------------------------------------
-----------Команды для открытия ссылок в браузере----------------
-----------------------------------------------------------------
+-- BROWSER and URL
+
 
 --Tg
 vim.api.nvim_create_user_command('Tg', function()
@@ -164,10 +156,7 @@ vim.cmd([[
 
 
 
-----------------------------------------------------------------
-----------------------Системные команды-------------------------
-----------------------------------------------------------------
-
+-- System
 -- ОТКРЫТЬ ДИРЕКТОРИЮ В проводнике
 vim.api.nvim_create_user_command('OpenDE', function()
     local dir = vim.fn.expand('%:p:h')
@@ -199,255 +188,10 @@ end, {})
 
 
 
-----------------------------------------------------------------
----------------Запуск-и-Сборка-Проектов-------------------------
-----------------------------------------------------------------
 
---Сборка и запуск проекта в зависимости от типа файла
-function RunCurrentFile()
-  local filetype = vim.bo.filetype
-  local filename = vim.fn.expand("%")
 
-  if filetype == "go" then
-    vim.cmd("!go run " .. filename)
-  elseif filetype == "python" then
-    vim.cmd("!python " .. filename)
-  elseif filetype == "cs" then
-    vim.cmd("!dotnet run")
-  elseif filetype == "java" then
-    vim.cmd("!javac " .. filename .. " && java " .. filename:gsub("%.java$", ""))
-  else
-    print("🚨 Неизвестный тип файла: " .. filetype)
-  end
-end
 
--- Привязываем к Ctrl+F5
-vim.api.nvim_set_keymap("n", "<C-F5>", ":lua RunCurrentFile()<CR>", { noremap = true, silent = true })
-
--- Привязываем к Run
-vim.api.nvim_create_user_command("Run", RunCurrentFile, {})
-
--- Сборка проекта через команду Build
--- Функция для сборки текущего файла в зависимости от языка
-function BuildCurrentFile()
-  local filetype = vim.bo.filetype
-  local cmd = ""
-
-  if filetype == "go" then
-    cmd = "go build %"
-  elseif filetype == "python" then
-    cmd = "echo 'Python не требует сборки'"
-  elseif filetype == "java" then
-    cmd = "javac %"
-  elseif filetype == "cs" then
-    cmd = "dotnet build"
-  else
-    print("Неизвестный тип файла: " .. filetype)
-    return
-  end
-
-  vim.cmd("!" .. cmd)
-end
-
--- Создаём команду :Build
-vim.api.nvim_create_user_command("Build", BuildCurrentFile, {})
-
-
-
-----------------------------------------------------------------
----------------Горячие клавиши и автосохранение-----------------
-----------------------------------------------------------------
-
--- Автосохранение при потере фокуса
-vim.cmd("autocmd FocusLost * silent! wa")
-
--- открыть терминал снизу Ctrl+T
-vim.api.nvim_set_keymap("n", "<C-T>", ":split | resize 10 | terminal<CR>", { noremap = true, silent = true })
-
--- закрыть терминал Ctrl+Q
-vim.api.nvim_set_keymap("t", "<C-Q>", "<C-\\><C-N>:q<CR>", { noremap = true, silent = true })
-
--- переключение меж терминалом и редактором Ctrl+Space
-vim.api.nvim_set_keymap("t", "<C-Space>", "<C-\\><C-N>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<C-Space>", "i", { noremap = true, silent = true })
-
--- закрыть файл  Закрыть файл
-vim.api.nvim_set_keymap("n", "<C-W>", ":q<CR>", { noremap = true, silent = true })
-
-
-
--- Улучшенный поиск с Ctrl+F
-vim.api.nvim_set_keymap("n", "<C-f>", ":set hlsearch<CR>/\\c", { noremap = true, silent = false }) -- Начинаем поиск
-vim.api.nvim_set_keymap("n", "n", "nzz", { noremap = true, silent = true }) -- Следующий с центрированием
-vim.api.nvim_set_keymap("n", "N", "Nzz", { noremap = true, silent = true }) -- Предыдущий с центрированием
-vim.api.nvim_set_keymap("n", "<C-g>", ":nohlsearch<CR>", { noremap = true, silent = true }) -- Очистка подсветки
-vim.api.nvim_set_keymap("n", "<CR>", "<CR>zz", { noremap = true, silent = true }) -- Подтверждение с центрированием
-
--- Настройки поиска
-vim.opt.incsearch = true  -- Инкрементальный поиск
-vim.opt.hlsearch = true   -- Подсветка совпадений
-vim.opt.ignorecase = true -- Игнорировать регистр
-vim.opt.smartcase = true  -- Умный учет регистра
-
-
-
-
--- Вставка
-
--- Ctrl+Z для отмены (undo)
-vim.api.nvim_set_keymap('n', '<C-z>', 'u', { noremap = true, silent = true })
-
--- Ctrl+Y для повтора (redo)
-vim.api.nvim_set_keymap('n', '<C-y>', '<C-r>', { noremap = true, silent = true })
-
--- Вставка - Ctrl+Z для отмены (undo)
-vim.api.nvim_set_keymap('i', '<C-z>', '<Esc>u', { noremap = true, silent = true })
-
--- Вставка - Ctrl+Y для повтора (redo)
-vim.api.nvim_set_keymap('i', '<C-y>', '<Esc><C-r>', { noremap = true, silent = true })
-
-
-
-
-
--- Удаления
-
--- Удаление выделенного текста при нажатии Backspace в визуальном режиме
-vim.api.nvim_set_keymap('v', '<BS>', 'd', { noremap = true, silent = true })
-
--- Настройка для F7
-vim.api.nvim_set_keymap('n', '<F7>', ':exe "cd " . expand("%:p:h")<CR>', { noremap = true, silent = true })
-
-
-
--- Улучшенные клавиши передвижения между окнами и сохранение  
-local keymap = vim.api.nvim_set_keymap  
-local opts = { noremap = true, silent = true }  
-
-keymap("n", "<C-h>", "<C-w>h", opts)  
-keymap("n", "<C-j>", "<C-w>j", opts)  
-keymap("n", "<C-k>", "<C-w>k", opts)  
-keymap("n", "<C-l>", "<C-w>l", opts)  
-keymap("n", "<C-s>", ":w<CR>", opts)  
-keymap("i", "<C-s>", "<Esc>:w<CR>a", opts)  
-keymap("v", "<C-s>", "<Esc>:w<CR>gv", opts)  
-
--- Использовать системный буфер обмена  
-vim.opt.clipboard = "unnamedplus"  
-
--- Улучшенные сочетания для копирования, вставки и вырезания  
-keymap("v", "<C-c>", '"+y', opts) -- Копирование  
-keymap("i", "<C-v>", '<C-r>+', opts) -- Вставка в режиме вставки  
-keymap("n", "<C-v>", '"+p', opts) -- Вставка в обычном режиме  
-keymap("v", "<C-v>", '"+p', opts) -- Вставка в режиме выделения  
-keymap("v", "<C-x>", '"+d', opts) -- Вырезание  
-
--- Выделения слов  
-keymap("n", "<C-S-x>", "dd", opts) -- Вырезать всю строку  
-keymap("n", "<C-S-c>", "yy", opts) -- Копировать всю строку  
-keymap("n", "<C-z>", "u", opts) -- Отмена последнего действия  
-
--- Выделение символов
-keymap("i", "<S-Left>", "<C-o>v<Left>", opts)
-keymap("i", "<S-Right>", "<C-o>v<Right>", opts)
-keymap("n", "<S-Left>", "v<Left>", opts)
-keymap("n", "<S-Right>", "v<Right>", opts)
-
--- Выделение строк (Shift + Up / Down)
-keymap("i", "<S-Up>", "<C-o>V<Up>", opts)
-keymap("i", "<S-Down>", "<C-o>V<Down>", opts)
-keymap("n", "<S-Up>", "V<Up>", opts)
-keymap("n", "<S-Down>", "V<Down>", opts)
-
-
--- Быстрое выделение по словам
-keymap("i", "<C-S-Left>", "<C-o>vB", opts)
-keymap("i", "<C-S-Right>", "<C-o>vE", opts)
-keymap("n", "<C-S-Left>", "vB", opts)
-keymap("n", "<C-S-Right>", "vE", opts)
-
-
-
--- Автозакрытие в режиме вставки
-local function map(mode, lhs, rhs, opts)
-  vim.api.nvim_set_keymap(mode, lhs, rhs, opts or { noremap = true, silent = true })
-end
-
-map("i", "(", "()<Left>")
-map("i", "{", "{}<Left>")
-map("i", "[", "[]<Left>")
-map("i", '"', '""<Left>')
-map("i", "'", "''<Left>")
-
-
-
--- Обертывание выделенного текста в визуальном режиме
-map("v", "(", "<Esc>`>a)<Esc>`<i(<Esc>")
-map("v", "{", "<Esc>`>a}<Esc>`<i{<Esc>")
-map("v", "[", "<Esc>`>a]<Esc>`<i[<Esc>")
-map("v", '"', '<Esc>`>a"<Esc>`<i"<Esc>')
-map("v", "'", "<Esc>`>a'<Esc>`<i'<Esc>")
-
-
-
--- Умный Enter для {}
-map("i", "<CR>", [[v:lua.smart_cr()]], { expr = true, noremap = true })
-_G.smart_cr = function()
-  local line = vim.api.nvim_get_current_line()
-  local col = vim.api.nvim_win_get_cursor(0)[2]
-  if line:sub(col, col + 1) == "{}" then
-    return "\r\n\r\027O" -- Enter, новая строка, Esc, вставка выше
-  end
-  return "\r"
-end
-
-
-
-----------------------------------------------------------------
-----------------------Команды Docker----------------------------
-----------------------------------------------------------------
-
--- Docker - run сборка и запуск
-vim.api.nvim_create_user_command('DockerRun', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose up --build')
-end, {})
-
--- Docker - build сборка
-vim.api.nvim_create_user_command('DockerBuild', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose build')
-end, {})
-
--- Docker - stop остановка
-vim.api.nvim_create_user_command('DockerStop', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose down')
-end, {})
-
--- Docker - clear очистка
-vim.api.nvim_create_user_command('DockerClear', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker system prune -f')
-end, {})
-
--- Docker - clear run очистка и запуск
-vim.api.nvim_create_user_command('DockerClearRun', function()
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker system prune -f && docker-compose up --build')
-end, {})
-
--- Docker name -run запуск проекта с именем
-vim.api.nvim_create_user_command('DockerNameRun', function(opts)
-  local cwd = vim.fn.expand('%:p:h')
-  vim.cmd('!cd ' .. cwd .. ' && docker-compose -f docker-compose.' .. opts.args .. '.yml up --build')
-end, {nargs = 1})
-
-
-
-----------------------------------------------------------------
--------------------------ASCI-ART-------------------------------
-----------------------------------------------------------------
+-- ROFL
 vim.api.nvim_create_user_command('B21', function()
     local art = [[
 ⠀⠀⠀⠀⠀⠀⡇⣿⣿⣿⣿⣿
@@ -630,9 +374,105 @@ end, {nargs = 0})
 
 
 
-----------------------------------------------------------------
-----------------------Команды Docker----------------------------
-----------------------------------------------------------------
+
+-- DOCKER 
+-- Docker - run сборка и запуск
+vim.api.nvim_create_user_command('DockerRun', function()
+  local cwd = vim.fn.expand('%:p:h')
+  vim.cmd('!cd ' .. cwd .. ' && docker-compose up --build')
+end, {})
+
+-- Docker - build сборка
+vim.api.nvim_create_user_command('DockerBuild', function()
+  local cwd = vim.fn.expand('%:p:h')
+  vim.cmd('!cd ' .. cwd .. ' && docker-compose build')
+end, {})
+
+-- Docker - stop остановка
+vim.api.nvim_create_user_command('DockerStop', function()
+  local cwd = vim.fn.expand('%:p:h')
+  vim.cmd('!cd ' .. cwd .. ' && docker-compose down')
+end, {})
+
+-- Docker - clear очистка
+vim.api.nvim_create_user_command('DockerClear', function()
+  local cwd = vim.fn.expand('%:p:h')
+  vim.cmd('!cd ' .. cwd .. ' && docker system prune -f')
+end, {})
+
+-- Docker - clear run очистка и запуск
+vim.api.nvim_create_user_command('DockerClearRun', function()
+  local cwd = vim.fn.expand('%:p:h')
+  vim.cmd('!cd ' .. cwd .. ' && docker system prune -f && docker-compose up --build')
+end, {})
+
+-- Docker name -run запуск проекта с именем
+vim.api.nvim_create_user_command('DockerNameRun', function(opts)
+  local cwd = vim.fn.expand('%:p:h')
+  vim.cmd('!cd ' .. cwd .. ' && docker-compose -f docker-compose.' .. opts.args .. '.yml up --build')
+end, {nargs = 1})
+
+
+
+
+
+-- Автосохранение при потере фокуса
+vim.cmd("autocmd FocusLost * silent! wa")
+
+-- открыть терминал снизу Ctrl+T
+vim.api.nvim_set_keymap("n", "<C-T>", ":split | resize 10 | terminal<CR>", { noremap = true, silent = true })
+
+-- закрыть терминал Ctrl+Q
+vim.api.nvim_set_keymap("t", "<C-Q>", "<C-\\><C-N>:q<CR>", { noremap = true, silent = true })
+
+-- переключение меж терминалом и редактором Ctrl+Space
+vim.api.nvim_set_keymap("t", "<C-Space>", "<C-\\><C-N>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("n", "<C-Space>", "i", { noremap = true, silent = true })
+
+-- закрыть файл  Закрыть файл
+vim.api.nvim_set_keymap("n", "<C-W>", ":q<CR>", { noremap = true, silent = true })
+
+
+-- Поиск в файле Ctrl+F
+vim.api.nvim_set_keymap("n", "<C-F>", "/", { noremap = true })
+
+
+
+
+-- Ctrl+Z для отмены (undo)
+vim.api.nvim_set_keymap('n', '<C-z>', 'u', { noremap = true, silent = true })
+
+-- Ctrl+Y для повтора (redo)
+vim.api.nvim_set_keymap('n', '<C-y>', '<C-r>', { noremap = true, silent = true })
+
+-- Вставка - Ctrl+Z для отмены (undo)
+vim.api.nvim_set_keymap('i', '<C-z>', '<Esc>u', { noremap = true, silent = true })
+
+-- Вставка - Ctrl+Y для повтора (redo)
+vim.api.nvim_set_keymap('i', '<C-y>', '<Esc><C-r>', { noremap = true, silent = true })
+
+
+
+
+
+-- Удаления
+
+-- Удаление слова слева при нажатии Shift + Backspace
+vim.api.nvim_set_keymap('i', '<S-BS>', '<C-w>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<S-BS>', 'db', { noremap = true, silent = true })
+
+-- Удаление всей строки при нажатии Ctrl + Shift + Backspace
+vim.api.nvim_set_keymap('i', '<C-S-BS>', '<Esc>ddi', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-S-BS>', 'dd', { noremap = true, silent = true })
+
+
+vim.api.nvim_set_keymap('n', 'F', ':Ex<CR>', { noremap = true, silent = true })
+
+-- Настройка для F7
+vim.api.nvim_set_keymap('n', '<F7>', ':exe "cd " . expand("%:p:h")<CR>', { noremap = true, silent = true })
+
+
+
 
 -- открытие директории файла в котором ты находишься 
 vim.api.nvim_create_user_command('ExUp', function()
@@ -647,24 +487,109 @@ vim.api.nvim_create_user_command('ExUp', function()
 end, {})
 
 
-----------------------------------------------------------------
-----------------------Команды lua-------------------------------
-----------------------------------------------------------------
-
 -- перезагрузка LuaConf
 vim.api.nvim_create_user_command("LuaBoot", function()
     vim.cmd("source $MYVIMRC")
     print("Lua config reloaded!")
 end, {})
 
+-- Улучшенные клавиши передвижения между окнами и сохранение  
+local keymap = vim.api.nvim_set_keymap  
+local opts = { noremap = true, silent = true }  
+
+keymap("n", "<C-h>", "<C-w>h", opts)  
+keymap("n", "<C-j>", "<C-w>j", opts)  
+keymap("n", "<C-k>", "<C-w>k", opts)  
+keymap("n", "<C-l>", "<C-w>l", opts)  
+keymap("n", "<C-s>", ":w<CR>", opts)  
+keymap("i", "<C-s>", "<Esc>:w<CR>a", opts)  
+keymap("v", "<C-s>", "<Esc>:w<CR>gv", opts)  
+
+-- Использовать системный буфер обмена  
+vim.opt.clipboard = "unnamedplus"  
+
+-- Улучшенные сочетания для копирования, вставки и вырезания  
+keymap("v", "<C-c>", '"+y', opts) -- Копирование  
+keymap("i", "<C-v>", '<C-r>+', opts) -- Вставка в режиме вставки  
+keymap("n", "<C-v>", '"+p', opts) -- Вставка в обычном режиме  
+keymap("v", "<C-v>", '"+p', opts) -- Вставка в режиме выделения  
+keymap("v", "<C-x>", '"+d', opts) -- Вырезание  
+
+-- Дополнительные хоткеи  
+keymap("n", "<C-S-x>", "dd", opts) -- Вырезать всю строку  
+keymap("n", "<C-S-c>", "yy", opts) -- Копировать всю строку  
+keymap("n", "<C-z>", "u", opts) -- Отмена последнего действия  
+
+-- Выделение символов
+keymap("i", "<S-Left>", "<C-o>v<Left>", opts)
+keymap("i", "<S-Right>", "<C-o>v<Right>", opts)
+keymap("n", "<S-Left>", "v<Left>", opts)
+keymap("n", "<S-Right>", "v<Right>", opts)
+
+-- Выделение строк (Shift + Up / Down)
+keymap("i", "<S-Up>", "<C-o>V<Up>", opts)
+keymap("i", "<S-Down>", "<C-o>V<Down>", opts)
+keymap("n", "<S-Up>", "V<Up>", opts)
+keymap("n", "<S-Down>", "V<Down>", opts)
 
 
+-- Быстрое выделение по словам
+keymap("i", "<C-S-Left>", "<C-o>vB", opts)
+keymap("i", "<C-S-Right>", "<C-o>vE", opts)
+keymap("n", "<C-S-Left>", "vB", opts)
+keymap("n", "<C-S-Right>", "vE", opts)
 
+-- Запуск и билд проекта при нахождении в нем же
+-- Быстрый запуск через CTRL + F5 или же команду Run
+-- Функция для запуска кода в зависимости от типа файла
+function RunCurrentFile()
+  local filetype = vim.bo.filetype
+  local filename = vim.fn.expand("%")
 
+  if filetype == "go" then
+    vim.cmd("!go run " .. filename)
+  elseif filetype == "python" then
+    vim.cmd("!python " .. filename)
+  elseif filetype == "cs" then
+    vim.cmd("!dotnet run")
+  elseif filetype == "java" then
+    vim.cmd("!javac " .. filename .. " && java " .. filename:gsub("%.java$", ""))
+  else
+    print("🚨 Неизвестный тип файла: " .. filetype)
+  end
+end
 
-----------------------------------------------------------------
--------------------Установка и настройка плагинов---------------
-----------------------------------------------------------------
+-- Привязываем к Ctrl+F5
+vim.api.nvim_set_keymap("n", "<C-F5>", ":lua RunCurrentFile()<CR>", { noremap = true, silent = true })
+
+-- Привязываем к Run
+vim.api.nvim_create_user_command("Run", RunCurrentFile, {})
+
+-- Сборка проекта через команду Build
+-- Функция для сборки текущего файла в зависимости от языка
+function BuildCurrentFile()
+  local filetype = vim.bo.filetype
+  local cmd = ""
+
+  if filetype == "go" then
+    cmd = "go build %"
+  elseif filetype == "python" then
+    cmd = "echo 'Python не требует сборки'"
+  elseif filetype == "java" then
+    cmd = "javac %"
+  elseif filetype == "cs" then
+    cmd = "dotnet build"
+  else
+    print("Неизвестный тип файла: " .. filetype)
+    return
+  end
+
+  vim.cmd("!" .. cmd)
+end
+
+-- Создаём команду :Build
+vim.api.nvim_create_user_command("Build", BuildCurrentFile, {})
+
 
 -- Установка packer.nvim (если ещё нет)
 local ensure_packer = function()
@@ -680,7 +605,6 @@ local ensure_packer = function()
 end
 
 ensure_packer()
-
 
 -- Устанавливаем нужные плагины
 require("packer").startup(function(use)
@@ -715,9 +639,56 @@ end)
 
 
 
-----------------------------------------------------------------
-------------------------Настройка nvim-tree---------------------
-----------------------------------------------------------------
+-- Автозакрытие в режиме вставки
+local function map(mode, lhs, rhs, opts)
+  vim.api.nvim_set_keymap(mode, lhs, rhs, opts or { noremap = true, silent = true })
+end
+
+map("i", "(", "()<Left>")
+map("i", "{", "{}<Left>")
+map("i", "[", "[]<Left>")
+map("i", '"', '""<Left>')
+map("i", "'", "''<Left>")
+
+-- Обертывание выделенного текста в визуальном режиме
+map("v", "(", "<Esc>`>a)<Esc>`<i(<Esc>")
+map("v", "{", "<Esc>`>a}<Esc>`<i{<Esc>")
+map("v", "[", "<Esc>`>a]<Esc>`<i[<Esc>")
+map("v", '"', '<Esc>`>a"<Esc>`<i"<Esc>')
+map("v", "'", "<Esc>`>a'<Esc>`<i'<Esc>")
+
+-- Умный Enter для {}
+map("i", "<CR>", [[v:lua.smart_cr()]], { expr = true, noremap = true })
+_G.smart_cr = function()
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2]
+  if line:sub(col, col + 1) == "{}" then
+    return "\r\n\r\027O" -- Enter, новая строка, Esc, вставка выше
+  end
+  return "\r"
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 -- Настройка nvim-tree
 require('nvim-tree').setup({
@@ -827,15 +798,19 @@ require('nvim-tree').setup({
 
 
 
+
+
+
+
+
+
+
+
+
+
 -- Загружаем плагины
 require("mason").setup()
 require("mason-lspconfig").setup()
-
-
-
-----------------------------------------------------------------
--------------Настройка LSP и автодополнения---------------------
-----------------------------------------------------------------
 
 -- Настроим LSP
 local lspconfig = require("lspconfig")
