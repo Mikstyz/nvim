@@ -50,7 +50,7 @@ vim.opt.backspace = { "indent", "eol", "start" }
 
 
 
-
+-- BROWSER and URL
 
 
 --Tg
@@ -72,8 +72,6 @@ end, {})
 vim.cmd([[
     command! TG Tg
 ]])
-
-
 
 -- Github
 vim.api.nvim_create_user_command('Git', function()
@@ -98,8 +96,95 @@ vim.cmd([[
 
 
 
+-- ChatGPT
+vim.api.nvim_create_user_command('Gpt', function()
+    local url = "https://chatgpt.com/"
+    print(url)
+    local os_name = vim.loop.os_uname().sysname
+    if os_name == "Windows_NT" then
+        os.execute('start ' .. url)
+    elseif os_name == "Darwin" then  -- macOS
+        os.execute('open ' .. url)
+    else  -- Linux/Unix
+        os.execute('xdg-open ' .. url)
+    end
+end, {})
+
+vim.cmd([[
+    command! GPT Gpt
+    command! ChatGpt Gpt
+    command! CHATGPT Gpt
+]])
+
+-- Grok
+vim.api.nvim_create_user_command('Grok', function()
+    local url = "https://grok.com/"
+    print(url)
+    local os_name = vim.loop.os_uname().sysname
+    if os_name == "Windows_NT" then
+        os.execute('start ' .. url)
+    elseif os_name == "Darwin" then  -- macOS
+        os.execute('open ' .. url)
+    else  -- Linux/Unix
+        os.execute('xdg-open ' .. url)
+    end
+end, {})
+
+vim.cmd([[
+    command! GROK Grok
+]])
+
+-- DeepSeek
+vim.api.nvim_create_user_command('DeepSeak', function()
+    local url = "https://chat.deepseek.com/"
+    print(url)
+    local os_name = vim.loop.os_uname().sysname
+    if os_name == "Windows_NT" then
+        os.execute('start ' .. url)
+    elseif os_name == "Darwin" then  -- macOS
+        os.execute('open ' .. url)
+    else  -- Linux/Unix
+        os.execute('xdg-open ' .. url)
+    end
+end, {})
+
+vim.cmd([[
+    command! DEEPSEAK DeepSeak
+    command! Deep DeepSeak
+    command! DEEP DeepSeak
+]])
 
 
+
+-- System
+-- ОТКРЫТЬ ДИРЕКТОРИЮ В проводнике
+vim.api.nvim_create_user_command('OpenDirE', function()
+    local dir = vim.fn.expand('%:p:h')
+    local os_name = vim.loop.os_uname().sysname
+    if os_name == "Windows_NT" then os.execute('explorer ' .. dir)
+    elseif os_name == "Darwin" then os.execute('open ' .. dir)
+    else os.execute('xdg-open ' .. dir) end
+end, {})
+
+-- ОТКРЫТЬ ДИРЕКТОРИЮ В ТЕРМИНАЛЕ
+vim.api.nvim_create_user_command('OpenDirT', function()
+    local dir = vim.fn.expand('%:p:h') -- Получаем путь к директории текущего файла
+    local os_name = vim.loop.os_uname().sysname
+    if os_name == "Windows_NT" then
+        os.execute('start cmd /k cd /d "' .. dir .. '"') -- Открываем cmd в нужной папке
+    elseif os_name == "Darwin" then
+        os.execute('open -a Terminal "' .. dir .. '"') -- Открываем Terminal на macOS
+    else
+        os.execute('x-terminal-emulator -e "cd ' .. dir .. ' && bash"') -- Открываем терминал на Linux
+    end
+end, {})
+
+--Копирование пути файла в буфер обмена
+vim.api.nvim_create_user_command('CopyPath', function()
+    local path = vim.fn.expand('%:p')
+    vim.fn.setreg('+', path)
+    print("Путь скопирован: " .. path)
+end, {})
 
 
 
