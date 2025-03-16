@@ -179,6 +179,11 @@ vim.api.nvim_set_keymap('n', '<C-S-BS>', 'dd', { noremap = true, silent = true }
 
 vim.api.nvim_set_keymap('n', 'F', ':Ex<CR>', { noremap = true, silent = true })
 
+-- Настройка для F7
+vim.api.nvim_set_keymap('n', '<F7>', ':exe "cd " . expand("%:p:h")<CR>', { noremap = true, silent = true })
+
+
+
 
 -- открытие директории файла в котором ты находишься 
 vim.api.nvim_create_user_command('ExUp', function()
