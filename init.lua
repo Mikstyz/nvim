@@ -192,6 +192,20 @@ vim.cmd([[
 ----------------------Системные команды-------------------------
 ----------------------------------------------------------------
 
+-- Отрыть директорию файла в EX
+vim.api.nvim_create_user_command('ExFolder', function()
+    local file_path = vim.fn.expand('%:p:h') -- Получаем путь к папке текущего файла
+    if file_path and file_path ~= "" then
+        vim.cmd("Lexplore " .. vim.fn.fnameescape(file_path))
+    else
+        print("Не удалось определить папку файла!")
+    end
+end, {})
+
+
+
+
+
 -- ОТКРЫТЬ ДИРЕКТОРИЮ В ТЕРМИНАЛЕ
 vim.api.nvim_create_user_command('OpenDirT', function()
     local dir = vim.fn.expand('%:p:h') -- Получаем путь к директории текущего файла
@@ -244,7 +258,6 @@ vim.api.nvim_create_user_command('Fdelete', function(opts)
     print('Ошибка: ' .. err)
   end
 end, { nargs = 1 })
-
 
 
 -- Создание папки FfAdd
@@ -309,6 +322,55 @@ end, { nargs = 1 })
 vim.api.nvim_create_user_command("FfDelete", function(opts)
   delete_folder(opts.fargs[1])
 end, { nargs = 1 })
+
+
+
+
+
+-- Переименование файла
+vim.api.nvim_create_user_command('Frename', function(opts)
+    local args = vim.split(opts.args, " ") -- Разбиваем аргументы
+    if #args < 2 then
+        print("Ошибка: введите старое и новое имя файла!")
+        return
+    end
+    local old_name = args[1]
+    local new_name = args[2]
+
+    if vim.fn.filereadable(old_name) == 0 then
+        print("Ошибка: файл не найден!")
+        return
+    end
+
+    if vim.fn.rename(old_name, new_name) == 0 then
+        print("Файл переименован: " .. old_name .. " → " .. new_name)
+    else
+        print("Ошибка при переименовании файла!")
+    end
+end, { nargs = "+" })
+
+-- Переименование папки
+vim.api.nvim_create_user_command('Ffrename', function(opts)
+    local args = vim.split(opts.args, " ") -- Разбиваем аргументы
+    if #args < 2 then
+        print("Ошибка: введите старое и новое имя папки!")
+        return
+    end
+    local old_dir = args[1]
+    local new_dir = args[2]
+
+    if vim.fn.isdirectory(old_dir) == 0 then
+        print("Ошибка: папка не найдена!")
+        return
+    end
+
+    if vim.fn.rename(old_dir, new_dir) == 0 then
+        print("Папка переименована: " .. old_dir .. " → " .. new_dir)
+    else
+        print("Ошибка при переименовании папки!")
+    end
+end, { nargs = "+" })
+
 
 
 
@@ -877,7 +939,6 @@ vim.api.nvim_create_user_command("GitReset", "!git reset HEAD %", {})
 
 -- Откатывает последний коммит  
 vim.api.nvim_create_user_command("GitRevert", "!git revert HEAD", {})
-
 
 
 ----------------------------------------------------------------
