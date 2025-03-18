@@ -61,6 +61,30 @@ vim.opt.shadafile = shada_dir .. "/main.shada"
 ----------Команды для открытия ссылок в браузере----------------
 ----------------------------------------------------------------
 
+-- Найти в браузере Brw запрос
+vim.api.nvim_create_user_command("Brw", function(opts)
+    local query = table.concat(opts.fargs, " ")
+    local url = "https://www.google.com/search?q=" .. vim.fn.escape(query, "#&")
+    local open_cmd
+
+    -- Определяем команду для открытия браузера в зависимости от ОС
+    if vim.fn.has("mac") == 1 then
+        open_cmd = "open '" .. url .. "'"
+    elseif vim.fn.has("unix") == 1 then
+        open_cmd = "xdg-open '" .. url .. "'"
+    elseif vim.fn.has("win32") == 1 then
+        open_cmd = "start " .. url
+    else
+        print("Не поддерживается на вашей ОС")
+        return
+    end
+
+    os.execute(open_cmd)
+end, { nargs = "+" })
+
+
+
+
 --Tg
 vim.api.nvim_create_user_command('Tg', function()
     local url = "https://t.me/Mikstyz"
@@ -187,6 +211,109 @@ vim.api.nvim_create_user_command('CopPat', function()
     vim.fn.setreg('+', path)
     print("Путь скопирован: " .. path)
 end, {})
+
+
+-- Создать файл Назниае.расширение
+vim.api.nvim_create_user_command('Fadd', function(opts)
+  local filename = opts.args
+  if filename == '' then
+    print('Ошибка: укажи имя файла')
+    return
+  end
+  local f = io.open(filename, 'w')
+  if f then
+    f:close()
+    print('Файл создан: ' .. filename)
+  else
+    print('Ошибка: не удалось создать файл')
+  end
+end, { nargs = 1 })
+
+
+-- удалить файл Название расширение
+vim.api.nvim_create_user_command('Fdelete', function(opts)
+  local filename = opts.args
+  if filename == '' then
+    print('Ошибка: укажи имя файла')
+    return
+  end
+  local ok, err = os.remove(filename)
+  if ok then
+    print('Файл удалён: ' .. filename)
+  else
+    print('Ошибка: ' .. err)
+  end
+end, { nargs = 1 })
+
+
+
+-- Создание папки FfAdd
+local function create_folder(foldername)
+  if not foldername or foldername == "" then
+    print("Please provide a folder name")
+    return
+  end
+
+  -- Формируем полный путь относительно текущей директории
+  local path = vim.fn.getcwd() .. "/" .. foldername
+  local cmd
+
+  -- Определяем команду в зависимости от ОС
+  local os_name = vim.loop.os_uname().sysname
+  if os_name == "Windows_NT" then
+    cmd = 'mkdir "' .. path .. '"'
+  else -- Linux, macOS
+    cmd = 'mkdir -p "' .. path .. '"'
+  end
+
+  local success = os.execute(cmd)
+  if success then
+    print("Создана папка: " .. path)
+  else
+    print("Ошибка создания папки: " .. path)
+  end
+end
+
+-- Удаление папки FfDelete
+local function delete_folder(foldername)
+  if not foldername or foldername == "" then
+    print("Please provide a folder name")
+    return
+  end
+
+  -- Формируем полный путь относительно текущей директории
+  local path = vim.fn.getcwd() .. "/" .. foldername
+  local cmd
+
+  -- Определяем команду в зависимости от ОС
+  local os_name = vim.loop.os_uname().sysname
+  if os_name == "Windows_NT" then
+    cmd = 'rmdir /s /q "' .. path .. '"'
+  else -- Linux, macOS
+    cmd = 'rm -rf "' .. path .. '"'
+  end
+
+  local success = os.execute(cmd)
+  if success then
+    print("Удалена папка: " .. path)
+  else
+    print("Ошибка удаления папки: " .. path)
+  end
+end
+
+-- Регистрация команд
+vim.api.nvim_create_user_command("FfAdd", function(opts)
+  create_folder(opts.fargs[1])
+end, { nargs = 1 })
+
+vim.api.nvim_create_user_command("FfDelete", function(opts)
+  delete_folder(opts.fargs[1])
+end, { nargs = 1 })
+
+
+
+
+
 
 ----------------------------------------------------------------
 ------------------------Открыть-в-------------------------------
